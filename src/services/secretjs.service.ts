@@ -62,7 +62,7 @@ class secretJsService {
     }
   }
 
-  public async executeContract(address: string, handleMsg: object, customFee: StdFee = null) {
+  public async executeContract(address: string, handleMsg: object, customFee: StdFee = undefined) {
     try {
       return this.signingClient.execute(address, handleMsg, '', [], customFee);
     } catch (error) {
@@ -71,7 +71,7 @@ class secretJsService {
     }
   }
 
-  public async asyncExecute(address: string, handleMsg: object, customFee: StdFee = null) {
+  public async asyncExecute(address: string, handleMsg: object, customFee: StdFee = undefined) {
     let post;
     const key = Object.keys(handleMsg)[0];
 
