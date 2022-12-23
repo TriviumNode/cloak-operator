@@ -3,7 +3,7 @@ import { CloakReleaseMessage } from '@interfaces/cloak.interface';
 import secretJsService from '@services/secretjs.service';
 import { StdFee } from 'secretjs/types/types';
 import { AnyRecord } from 'dns';
-import isValidAddress from 'utils/isValidAddress'
+import isValidAddress from 'utils/isValidAddress';
 
 const textEncoding = require('text-encoding');
 const TextDecoder = textEncoding.TextDecoder;
@@ -27,35 +27,51 @@ class CloakController {
 
       //verify input
       if (!txkey || txkey.length !== 64) {
-        throw({message:"Invalid TX Key"})
+        throw { message: 'Invalid TX Key' };
       }
       if (!sender || !isValidAddress(sender)) {
-        throw({message:"Invalid Recipient Address"})
+        throw { message: 'Invalid Recipient Address' };
       }
 
-     //query to make sure the key is valid so we dont waste gas 
+      //query to make sure the key is valid so we dont waste gas
       const query = {
-        get_exists : {
-          tx_key: txkey
-        }
-      }
-      
+        get_exists: {
+          tx_key: txkey,
+        },
+      };
+
       const queryResult = await this.secretjsService.runQuery(this.contractAddress, query);
       if (!queryResult.exists) {
-        throw({message:'There are no pending transactions with this key.'})
+        throw { message: 'There are no pending transactions with this key.' };
       }
 
       //execute the finalize handle
       const handle: CloakReleaseMessage = {
         finalize_seed: {
           tx_key: txkey,
-          sender: sender
+          sender: sender,
         },
       };
 
       const handleResponse = await this.secretjsService.asyncExecute(this.contractAddress, handle);
       res.status(200).json(handleResponse);
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  };
 
+  public statusCheck = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const balanceResult = await this.secretjsService.queryBalance();
+      if (balanceResult) {
+        const uscrtBalance = balanceResult.balance.find(coin => coin.denom === 'uscrt').amount;
+        if (!uscrtBalance) res.status(200).json({ status: false });
+        else if (parseInt(uscrtBalance) < 12500) res.status(200).json({ status: false });
+        else res.status(200).json({ status: true });
+      } else {
+        res.status(200).json({ status: false });
+      }
     } catch (error) {
       console.log(error);
       next(error);

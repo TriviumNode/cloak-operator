@@ -12,6 +12,7 @@ class CloakReleaseRoute implements Routes {
   }
 
   private initializeRoutes() {
+    this.router.get(`${this.path}/status`, this.queueController.statusCheck);
     this.router.get(`${this.path}/`, this.queueController.addToQueue);
     //this.router.post(`${this.path}/`, this.queueController.addToQueue);
   }

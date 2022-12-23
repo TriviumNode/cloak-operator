@@ -1,10 +1,10 @@
-import {SigningCosmWasmClient} from 'secretjs';
-import {StdFee} from 'secretjs/types/types';
+import { SigningCosmWasmClient } from 'secretjs';
+import { StdFee } from 'secretjs/types/types';
 import retry from 'async-await-retry';
 
 import { URL } from 'url';
 
-const {EnigmaUtils, Secp256k1Pen, pubkeyToAddress, encodeSecp256k1Pubkey, BroadcastMode} = require('secretjs');
+const { EnigmaUtils, Secp256k1Pen, pubkeyToAddress, encodeSecp256k1Pubkey, BroadcastMode } = require('secretjs');
 const textEncoding = require('text-encoding');
 
 const sleep = duration => new Promise(res => setTimeout(res, duration));
@@ -20,7 +20,7 @@ class secretJsService {
   public txEncryptionSeed = this.getTxEncryptionSeed();
   public customFees = {
     exec: {
-      amount: [{ amount: (this.gasLimit*this.gasPrice).toString(), denom: 'uscrt' }],
+      amount: [{ amount: (this.gasLimit * this.gasPrice).toString(), denom: 'uscrt' }],
       gas: this.gasLimit.toString(),
     },
   };
@@ -41,7 +41,7 @@ class secretJsService {
     const signingPen = await Secp256k1Pen.fromMnemonic(this.mnemonic);
     const pubkey = encodeSecp256k1Pubkey(signingPen.pubkey);
     this.accAddress = pubkeyToAddress(pubkey, 'secret');
-    
+
     const client = new SigningCosmWasmClient(
       this.restUrl.toString(),
       this.accAddress,
@@ -62,6 +62,15 @@ class secretJsService {
     }
   }
 
+  public async queryBalance(address = this.accAddress) {
+    try {
+      console.log(address);
+      return await this.signingClient.getAccount(address);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   public async executeContract(address: string, handleMsg: object, customFee: StdFee = undefined) {
     try {
       return this.signingClient.execute(address, handleMsg, '', [], customFee);
@@ -76,29 +85,29 @@ class secretJsService {
     const key = Object.keys(handleMsg)[0];
 
     try {
-        post = await this.signingClient.execute(address, handleMsg, '', [], customFee);
+      post = await this.signingClient.execute(address, handleMsg, '', [], customFee);
     } catch (e) {
-        console.error(`failed to broadcast tx: ${e}`);
-        throw `Failed to broadcast transaction ${e}`;
+      console.error(`failed to broadcast tx: ${e}`);
+      throw `Failed to broadcast transaction ${e}`;
     }
 
     try {
-        await sleep(5000);
-        const res = await retry(
-            () => {
-            return this.signingClient.restClient.txById(post.transactionHash);
-            },
-            null,
-            { retriesMax: 10, interval: 5000 },
-        );
+      await sleep(5000);
+      const res = await retry(
+        () => {
+          return this.signingClient.restClient.txById(post.transactionHash);
+        },
+        null,
+        { retriesMax: 10, interval: 5000 },
+      );
 
-    return {
+      return {
         ...res,
         transactionHash: post.transactionHash,
-    };
+      };
     } catch (e) {
-        let error = `Timed out while waiting for transaction ${e}`;
-        throw error;
+      const error = `Timed out while waiting for transaction ${e}`;
+      throw error;
     }
   }
 
@@ -112,12 +121,12 @@ class secretJsService {
 
   public async txsQuery(query: string): Promise<any> {
     try {
-      let queryString = `${query}&limit=1&page=1`;
-      let TRX_PER_PAGE = 5;
+      const queryString = `${query}&limit=1&page=1`;
+      const TRX_PER_PAGE = 5;
 
       return this.signingClient.restClient.txsQuery(queryString).then(response => {
-        let totalTrxCount = parseInt(response.total_count);
-        let pageNum = Math.ceil(totalTrxCount / TRX_PER_PAGE);
+        const totalTrxCount = parseInt(response.total_count);
+        const pageNum = Math.ceil(totalTrxCount / TRX_PER_PAGE);
         // console.log('Found ' + totalTrxCount + ' trx, lastPage: ' + pageNum);
 
         return this.signingClient.restClient.txsQuery(`${query}&limit=${TRX_PER_PAGE}&page=${pageNum}`);

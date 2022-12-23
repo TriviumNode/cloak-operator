@@ -10,6 +10,10 @@ class QueueController {
 
   public sleep = duration => new Promise(res => setTimeout(res, duration));
 
+  public statusCheck = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    this.cloakController.statusCheck(req, res, next);
+  };
+
   public addToQueue = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const data = { req: req, res: res, next: next };
@@ -26,7 +30,7 @@ class QueueController {
       this.processingQueue = true;
       while (this.queue.peek()) {
         try {
-          const {req, res, next} = this.queue.receive();
+          const { req, res, next } = this.queue.receive();
           this.cloakController.cloakRelease(req, res, next);
         } catch (error) {
           console.log(error);
